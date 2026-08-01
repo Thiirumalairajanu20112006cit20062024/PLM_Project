@@ -188,7 +188,21 @@ st.markdown(ENTERPRISE_CSS, unsafe_allow_html=True)
 # --------------------------------------------------------------------------------------
 @st.cache_resource
 def load_trained_artifacts():
+    """
+    Loads saved machine learning models, scalers, and encoders from saved_models/.
+    If models are missing (e.g. on fresh cloud deployment), automatically runs training.
+    """
     models_dir = "saved_models"
+    classifier_path = os.path.join(models_dir, "classifier.pkl")
+    
+    # Auto-train models if missing on cloud host
+    if not os.path.exists(classifier_path):
+        try:
+            import train_model
+            train_model.train_and_evaluate_models()
+        except Exception as train_err:
+            return None, None, None, None, f"Auto-training failed: {train_err}"
+
     try:
         clf = joblib.load(os.path.join(models_dir, "classifier.pkl"))
         reg = joblib.load(os.path.join(models_dir, "regressor.pkl"))
